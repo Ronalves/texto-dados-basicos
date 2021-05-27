@@ -1,0 +1,49 @@
+  DATA:headdata             TYPE bapimathead,
+       tg_matdescript_b     TYPE TABLE OF bapi_makt,
+       tg_matlongtext_b     TYPE TABLE OF bapi_mltx,
+       tg_lines             TYPE STANDARD TABLE OF tline,
+       ls_matlongtext_b     TYPE bapi_mltx,
+       ls_matdescript_b     TYPE bapi_makt,
+       ls_matdescript       TYPE bapi_makt_ga,
+       ls_matlongtext       TYPE bapi_mltx_ga,
+       ls_clientdata        LIKE bapi_mara,
+       ls_clientdatax       LIKE bapi_marax,
+       ls_header            TYPE thead,
+       ls_lines             TYPE tline.
+
+* Header Data
+  headdata-material    = i_matnr.
+  headdata-basic_view  = 'X'.
+
+*Grp Mercadoria
+  IF i_matkl IS NOT INITIAL.
+    ls_clientdata-matl_group  = i_matkl.
+    ls_clientdatax-matl_group = 'X'.
+  ENDIF.
+
+*Texto curto
+  LOOP AT tg_matdescript INTO ls_matdescript.
+    MOVE-CORRESPONDING:ls_matdescript TO ls_matdescript_b.
+    APPEND ls_matdescript_b TO tg_matdescript_b.
+  ENDLOOP.
+
+  LOOP AT tg_matlongtext INTO ls_matlongtext.
+    MOVE-CORRESPONDING:ls_matlongtext TO ls_matlongtext_b.
+    APPEND ls_matlongtext_b TO tg_matlongtext_b.
+  ENDLOOP.
+
+  CALL FUNCTION 'BAPI_MATERIAL_SAVEDATA'
+    EXPORTING
+      headdata            = headdata
+      clientdata          = ls_clientdata
+      clientdatax         = ls_clientdatax
+    IMPORTING
+      return              = return
+    TABLES
+      materialdescription = tg_matdescript_b
+      materiallongtext    = tg_matlongtext_b.
+
+  CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+    EXPORTING
+      wait = 'X'.
+*===============================================================================
